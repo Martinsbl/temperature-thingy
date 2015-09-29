@@ -169,7 +169,7 @@ void app_error_handler(uint32_t error_code, uint32_t line_num, const uint8_t * p
 }
 
 
-/**@brief Callback function for asserts in the SoftDevice.
+/**@brief Callback function for assertin the SoftDevice.
  *
  * @details This function will be called in case of an assert in the SoftDevice.
  *
