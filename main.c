@@ -52,8 +52,6 @@
 #define IS_SRVC_CHANGED_CHARACT_PRESENT 0                                           /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
 #define WAKEUP_BUTTON_PIN               BUTTON_0                                    /**< Button used to wake up the application. */
-// YOUR_JOB: Define any other buttons to be used by the applications:
-// #define MY_BUTTON_PIN                   BUTTON_1
 
 #define LED_0 LED_RGB_BLUE
 #define LED_1 LED_RGB_GREEN
@@ -63,10 +61,10 @@
 #define CONNECTED_LED_PIN_NO            LED_1                                       /**< Is on when device has connected. */
 #define ASSERT_LED_PIN_NO               LED_7                                       /**< Is on when application has asserted. */
 
-#define DEVICE_NAME                     "TempBeacon"                           /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     SENSOR_NAME                           /**< Name of device. Will be included in the advertising data. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
-#define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
+#define APP_ADV_TIMEOUT_IN_SECONDS      0                                         /**< The advertising timeout (in units of seconds). */
 
 // YOUR_JOB: Modify these according to requirements.
 #define APP_TIMER_PRESCALER             0                                           /**< Value of the RTC1 PRESCALER register. */
@@ -112,7 +110,7 @@ ble_bas_t m_bas;
 
 // OUR_JOB: Decleare a app_timer id variable and define our timer interval
 #define TIMER_INTERVAL_SENSOR             APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)
-#define TIMER_INTERVAL_BATTERY             APP_TIMER_TICKS(1000, APP_TIMER_PRESCALER)
+#define TIMER_INTERVAL_BATTERY             APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER)
 app_timer_id_t m_app_timer_sensor_id;
 app_timer_id_t m_app_timer_battery_id;
 
@@ -209,8 +207,8 @@ static void service_error_handler(uint32_t nrf_error)
 static void leds_init(void)
 {
     nrf_gpio_cfg_output(ADVERTISING_LED_PIN_NO);
-    nrf_gpio_cfg_output(CONNECTED_LED_PIN_NO);
-    nrf_gpio_cfg_output(ASSERT_LED_PIN_NO);
+//    nrf_gpio_cfg_output(CONNECTED_LED_PIN_NO);
+//    nrf_gpio_cfg_output(ASSERT_LED_PIN_NO);
 
     // YOUR_JOB: Add additional LED initialiazations if needed.
 }
@@ -440,32 +438,13 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:
-            nrf_gpio_pin_set(CONNECTED_LED_PIN_NO);
-            nrf_gpio_pin_clear(ADVERTISING_LED_PIN_NO);
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-
-            /* YOUR_JOB: Uncomment this part if you are using the app_button module to handle button
-                         events (assuming that the button events are only needed in connected
-                         state). If this is uncommented out here,
-                            1. Make sure that app_button_disable() is called when handling
-                               BLE_GAP_EVT_DISCONNECTED below.
-                            2. Make sure the app_button module is initialized.
-            err_code = app_button_enable();
-            APP_ERROR_CHECK(err_code);
-            */
+            timers_start();
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:
-            nrf_gpio_pin_clear(CONNECTED_LED_PIN_NO);
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
-            /* YOUR_JOB: Uncomment this part if you are using the app_button module to handle button
-                         events. This should be done to save power when not connected
-                         to a peer.
-            err_code = app_button_disable();
-            APP_ERROR_CHECK(err_code);
-            */
-            
                 advertising_start();
             break;
 
@@ -503,7 +482,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
         case BLE_GAP_EVT_TIMEOUT:
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_ADVERTISEMENT)
             {
-                nrf_gpio_pin_clear(ADVERTISING_LED_PIN_NO);
 
                 // Configure buttons with sense level low as wakeup source.
                 nrf_gpio_cfg_sense_input(WAKEUP_BUTTON_PIN,
@@ -649,7 +627,7 @@ int main(void)
     sec_params_init();
 
     // Start execution
-    timers_start();
+    
     advertising_start();
     
     NRF_ADC->CONFIG = (( ADC_CONFIG_RES_10bit                               << ADC_CONFIG_RES_Pos) |

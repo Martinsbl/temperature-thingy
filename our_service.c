@@ -88,7 +88,7 @@ static uint32_t our_descriptor_add(ble_os_t * p_our_service, uint16_t char_handl
     
         
     //uint8_t attr_value[]  = "Your User description";
-    uint8_t attr_value[]  = "Livingroom";
+    uint8_t attr_value[]  = SENSOR_NAME;
     const uint16_t attr_len   = sizeof(attr_value);
     
     ble_gatts_attr_t    attr;
