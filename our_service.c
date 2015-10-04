@@ -138,6 +138,7 @@ static uint32_t our_char_add(ble_os_t * p_our_service)
     
     char_md.char_props.notify = 1;
     char_md.p_cccd_md = &cccd_md;
+    char_md.char_props.read = 1;
     
     
     // OUR_JOB: Initiate variable holding the characteristic attribute metadata

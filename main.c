@@ -49,7 +49,7 @@
 #include "our_service.h"
 
 
-#define IS_SRVC_CHANGED_CHARACT_PRESENT 0                                           /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
+#define IS_SRVC_CHANGED_CHARACT_PRESENT 1                                           /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
 #define WAKEUP_BUTTON_PIN               BUTTON_0                                    /**< Button used to wake up the application. */
 
@@ -439,6 +439,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     {
         case BLE_GAP_EVT_CONNECTED:
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+            do_battery_level_measurement = true;
             timers_start();
             break;
 
@@ -609,6 +610,24 @@ static void power_manage(void)
 }
 
 
+
+void measure_battery()
+{
+    NRF_ADC->TASKS_START = 1;
+    NRF_ADC->ENABLE = 1;
+    while(NRF_ADC->BUSY);
+
+    uint16_t adc_sample = NRF_ADC->RESULT;
+    float level = ((float)adc_sample / 1023) * 36;
+    battery_level = (uint8_t)level;
+
+    ble_bas_battery_level_update(&m_bas, battery_level);
+
+    NRF_ADC->TASKS_STOP = 1;
+
+    do_battery_level_measurement = false;
+}
+
 /**@brief Function for application main entry.
  */
 int main(void)
@@ -636,26 +655,15 @@ int main(void)
                         (ADC_CONFIG_PSEL_Disabled                           << ADC_CONFIG_PSEL_Pos) |
                         (ADC_CONFIG_EXTREFSEL_None                          << ADC_CONFIG_EXTREFSEL_Pos));
     // Enter main loop
+    
+    
     for (;;)
     {
         app_sched_execute();
         power_manage();
         if(do_battery_level_measurement == true)
         {
-            
-            NRF_ADC->TASKS_START = 1;
-            NRF_ADC->ENABLE = 1;
-            while(NRF_ADC->BUSY);
-            
-            uint16_t adc_sample = NRF_ADC->RESULT;
-            float level = ((float)adc_sample / 1023) * 36;
-            battery_level = (uint8_t)level;
-            
-            ble_bas_battery_level_update(&m_bas, battery_level);
-            
-            NRF_ADC->TASKS_STOP = 1;
-            
-            do_battery_level_measurement = false;
+            measure_battery();
         }
     }
 }
